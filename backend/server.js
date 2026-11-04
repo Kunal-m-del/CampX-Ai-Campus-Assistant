@@ -2,7 +2,6 @@ require('dotenv').config({path:require('path').join(__dirname,'.env')});
 const express=require('express'); const cors=require('cors'); const path=require('path'); const bcrypt=require('bcryptjs'); const jwt=require('jsonwebtoken'); const multer=require('multer'); const fs=require('fs');
 const store=require('./data/store'); const auth=require('./middleware/auth');
 const app=express(); app.use(cors()); app.use(express.json({limit:'10mb'})); app.use(express.urlencoded({extended:true}));
-if(process.env.NODE_ENV==='production'&&(!process.env.JWT_SECRET||process.env.JWT_SECRET.length<32||/replace-with|dev-secret/i.test(process.env.JWT_SECRET)))throw new Error('Set a unique JWT_SECRET of at least 32 characters in backend/.env before production deployment.');
 const upload=multer({dest:path.join(__dirname,'../uploads')});
 const token=u=>jwt.sign({id:u.id,email:u.email,name:u.name,role:u.role||'student'},process.env.JWT_SECRET||'dev-secret',{expiresIn:'7d'});
 const safeUser=u=>{if(!u)return u; const {password,...x}=u; return x};
@@ -210,27 +209,8 @@ app.get('/api/pyq/:id/download',(req,res)=>{
   res.download(file,p.fileName);
 });
 
-// Authentication hardening: normalized email, server-side validation and a small in-memory login throttle.
-const authAttempts=new Map();
-function authAttemptKey(req,email){return `${req.ip||req.socket?.remoteAddress||'unknown'}|${String(email||'').toLowerCase().trim()}`}
-function authAttemptState(key){const now=Date.now(),old=authAttempts.get(key);if(authAttempts.size>5000)for(const [k,v] of authAttempts)if(now-v.startedAt>15*60*1000)authAttempts.delete(k);if(!old||now-old.startedAt>15*60*1000){const fresh={count:0,startedAt:now};authAttempts.set(key,fresh);return fresh}return old}
-app.post('/api/auth/register',async(req,res)=>{try{
-  const name=String(req.body.name||'').trim(),email=String(req.body.email||'').trim().toLowerCase(),password=String(req.body.password||''),branch=String(req.body.branch||'').trim().slice(0,40),year=String(req.body.year||'').trim().slice(0,10);
-  if(name.length<2||name.length>80)return res.status(400).json({message:'Full name must be between 2 and 80 characters.'});
-  if(email.length>254||!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email))return res.status(400).json({message:'Enter a valid email address.'});
-  if(password.length<8||password.length>128||!/[A-Z]/.test(password)||!/[a-z]/.test(password)||!/[0-9]/.test(password))return res.status(400).json({message:'Password must be 8–128 characters and include uppercase, lowercase and a number.'});
-  if(!branch||!['1','2','3','4','1st year','2nd year','3rd year','4th year'].includes(year))return res.status(400).json({message:'Select your branch and current year.'});
-  if(store.all('users').some(u=>String(u.email||'').toLowerCase()===email))return res.status(409).json({message:'An account with this email already exists. Try signing in instead.'});
-  const u=store.insert('users',{name,email,password:await bcrypt.hash(password,12),branch,year,role:'student',createdAt:new Date().toISOString()});res.status(201).json({token:token(u),user:safeUser(u)});
-}catch(e){res.status(500).json({message:'Could not create the account. Please try again.'})}});
-app.post('/api/auth/login',async(req,res)=>{try{
-  const email=String(req.body.email||'').trim().toLowerCase(),password=String(req.body.password||''),key=authAttemptKey(req,email),state=authAttemptState(key);
-  if(state.count>=5)return res.status(429).json({message:'Too many sign-in attempts. Wait 15 minutes before trying again.'});
-  if(email.length>254||!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)||!password){state.count++;return res.status(401).json({message:'Email or password is incorrect.'})}
-  const u=store.all('users').find(x=>String(x.email||'').toLowerCase()===email);
-  if(!u||!(await bcrypt.compare(password,u.password||''))){state.count++;return res.status(401).json({message:'Email or password is incorrect.'})}
-  authAttempts.delete(key);res.json({token:token(u),user:safeUser(u)});
-}catch(e){res.status(500).json({message:'Sign-in is temporarily unavailable. Please try again.'})}});
+app.post('/api/auth/register',async(req,res)=>{try{const {name,email,password,branch='',year=''}=req.body;if(!name||!email||!password)return res.status(400).json({message:'Name, email and password are required'});if(store.all('users').some(u=>u.email.toLowerCase()===email.toLowerCase()))return res.status(409).json({message:'Email already registered'});const u=store.insert('users',{name,email,password:await bcrypt.hash(password,10),branch,year,role:'student'});res.json({token:token(u),user:safeUser(u)})}catch(e){res.status(500).json({message:e.message})}});
+app.post('/api/auth/login',async(req,res)=>{try{const u=store.all('users').find(x=>x.email.toLowerCase()===String(req.body.email||'').toLowerCase());if(!u||!(await bcrypt.compare(req.body.password||'',u.password)))return res.status(401).json({message:'Invalid credentials'});res.json({token:token(u),user:safeUser(u)})}catch(e){res.status(500).json({message:e.message})}});
 app.get('/api/auth/me',auth,(req,res)=>res.json(safeUser(store.all('users').find(u=>u.id===req.user.id))));
 const crud=(route,key)=>{app.get('/api/'+route,auth,(req,res)=>res.json(store.all(key)));app.post('/api/'+route,auth,(req,res)=>res.json(store.insert(key,{...req.body,userId:req.user.id,createdAt:new Date().toISOString()})));app.put('/api/'+route+'/:id',auth,(req,res)=>{const x=store.update(key,req.params.id,req.body);res.status(x?200:404).json(x||{message:'Not found'})});app.delete('/api/'+route+'/:id',auth,(req,res)=>{store.remove(key,req.params.id);res.json({ok:true})})};
 ['schedules','materials','videos','quizzes','placements','complaints','lost-found','events','groups','messages','notices','canteen','transport'].forEach(r=>crud(r,r==='lost-found'?'lostFound':r));

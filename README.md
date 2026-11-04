@@ -180,8 +180,7 @@ The subject analysis now lists only exact repeated questions and similar questio
 Quiz & Performance now has **Suggest repeated topics** before generating a quiz. It retrieves the selected subject's cross-year analysis and shows topic recommendations and repeated question evidence. Quiz generation receives the same year-aware topic signals and, when AI is configured, uses them to emphasize recurring topics in original practice MCQs. This remains descriptive historical evidence, not a prediction or guarantee. Scanned/unindexed papers and OCR errors can affect results.
 
 
-## Authentication and login improvements
-
-The sign-in/register screen has been refreshed with a responsive two-panel layout, accessible form labels, show/hide password control, password-strength feedback, password confirmation, branch/year selection, inline errors, loading state, and client-side input validation. The backend normalizes email addresses, validates registration fields, hashes new passwords with bcrypt cost 12, returns generic sign-in errors, and throttles repeated failed sign-in attempts in memory (5 attempts per email/IP within a 15-minute window).
-
-**Deployment security:** Set a long, random `JWT_SECRET` in `backend/.env` before deploying or sharing the app beyond local development. The built-in development fallback is not suitable for production. The sign-in throttle is process-local and resets when the server restarts; production deployments should use a shared rate limiter and HTTPS. Password reset/email verification are not enabled because this project has no configured email delivery flow; do not treat the help text as a password-reset feature.
+## UI refresh (November 2026)
+- Added persistent light/dark appearance toggle on the login screen and authenticated app header.
+- Added a refreshed visual system for buttons, cards, navigation, fields, hover/focus states, and responsive layouts.
+- Theme preference is stored locally as `campx_theme`; logout now clears only the authentication token and user profile, preserving appearance and other local preferences.
