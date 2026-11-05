@@ -184,3 +184,17 @@ Quiz & Performance now has **Suggest repeated topics** before generating a quiz.
 - Added persistent light/dark appearance toggle on the login screen and authenticated app header.
 - Added a refreshed visual system for buttons, cards, navigation, fields, hover/focus states, and responsive layouts.
 - Theme preference is stored locally as `campx_theme`; logout now clears only the authentication token and user profile, preserving appearance and other local preferences.
+
+
+## College-only Google authentication
+
+CAMP-X now uses Google Identity Services for sign-in. Password-based registration/login is disabled. The backend verifies the Google ID token, requires Google's `email_verified` claim, and enforces the configured college email domain(s) before creating a session. The default allowed domain is `akgec.ac.in`; confirm with the college IT/admin team that this is the student-issued domain before launch.
+
+### Google OAuth setup (local and Render)
+1. In Google Cloud Console, create/select a project and configure the OAuth consent screen.
+2. Create an OAuth Client ID with application type **Web application**. Add your local origin (for example `http://localhost:5000`) and your deployed Render origin (for example `https://YOUR-SERVICE.onrender.com`) under **Authorized JavaScript origins**.
+3. Copy the Client ID (never put a client secret in frontend code).
+4. Add backend environment variables: `GOOGLE_CLIENT_ID` and `COLLEGE_EMAIL_DOMAINS=akgec.ac.in`. For multiple official domains, use a comma-separated list. Keep `JWT_SECRET` set to a long random value.
+5. Deploy/restart the backend, then test with a real college Google account and a personal Gmail account. The college account should pass; personal Gmail should be rejected.
+
+Google account authentication proves control of a Google account with a verified email in the allowed domain; it does not independently prove current student enrollment. For stronger enrollment assurance, use a college-managed Google Workspace domain or add an administrator-approved student roster check.

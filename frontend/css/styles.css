@@ -148,3 +148,9 @@ body{background:var(--bg);color:var(--text);transition:background .22s ease,colo
 
 @media(max-width:900px){.main{padding:18px}.topbar{gap:12px}.topbar-actions{width:100%;justify-content:flex-start}.auth-theme-toggle{top:14px;right:14px}}
 @media(prefers-reduced-motion:reduce){*,*::before,*::after{scroll-behavior:auto!important;transition:none!important;animation:none!important}}
+
+
+/* College Google sign-in */
+.google-signin-wrap{display:flex;justify-content:center;align-items:center;min-height:54px;margin:22px auto 10px;padding:10px;border:1px solid var(--border,rgba(128,128,128,.25));border-radius:16px;background:var(--surface,rgba(128,128,128,.04));}
+.google-signin-wrap iframe{max-width:100%;}
+#googleStatus{line-height:1.6;text-align:center;}
