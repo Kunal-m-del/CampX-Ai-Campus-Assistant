@@ -154,3 +154,10 @@ body{background:var(--bg);color:var(--text);transition:background .22s ease,colo
 .google-signin-wrap{display:flex;justify-content:center;align-items:center;min-height:54px;margin:22px auto 10px;padding:10px;border:1px solid var(--border,rgba(128,128,128,.25));border-radius:16px;background:var(--surface,rgba(128,128,128,.04));}
 .google-signin-wrap iframe{max-width:100%;}
 #googleStatus{line-height:1.6;text-align:center;}
+
+/* Student profile fields on Google sign-in */
+.campx-auth-profile{display:grid;grid-template-columns:1fr;gap:12px;text-align:left;margin:18px 0 12px}
+.campx-auth-profile label{display:grid;gap:6px;font-size:13px;font-weight:650;color:var(--text,#243047)}
+.campx-auth-profile .field{width:100%;min-height:46px;border-radius:12px}
+.google-signin-wrap{display:flex;justify-content:center;margin-top:16px}
+@media(min-width:560px){.campx-auth-profile{grid-template-columns:1fr 1fr}.campx-auth-profile label:first-child{grid-column:1/-1}}
